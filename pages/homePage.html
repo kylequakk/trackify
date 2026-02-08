@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content=Tracalify>
+
+    <meta name="theme-color" content="#0ACDFF">
+    <title>Tracalify</title>
+    <style>
+        /* --- CORE STYLES --- */
+        #loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999; background: #CBE896;
+            transition: transform 0.6s cubic-bezier(0.85, 0, 0.15, 1);
+            display: flex; justify-content: center; align-items: center;
+        }
+        .logo-wrap { font-family: 'Poppins', sans-serif; font-weight: 900; font-size: 80px; color: #034732; display: flex; overflow: hidden; }
+        .brand-rest { display: inline-block; max-width: 0; opacity: 0; animation: expand 0.6s 0.3s forwards; }
+        @keyframes expand { to { max-width: 400px; opacity: 1; } }
+        .loader-hidden { transform: translateY(-100%); }
+
+        body {
+            font-family: 'Poppins', sans-serif; margin: 0; padding: 0; min-height: 100vh;
+            background: linear-gradient(rgba(3, 71, 50, 0.7), rgba(3, 71, 50, 0.7)),
+            url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=1000&q=80');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: white; padding-bottom: 120px;
+        }
+
+        header { background: #0ACDFF; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 800; font-size: 1.5rem; cursor: pointer; text-decoration: none; color: white; }
+
+        main { padding: 2rem 1rem; max-width: 450px; margin: 2rem auto; background: rgba(255, 255, 255, 0.1); border-radius: 32px; backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); text-align: center; }
+
+        .circle-container { position: relative; width: 180px; height: 180px; margin: 0 auto 1.5rem; }
+        .circle-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .circle-bg { fill: none; stroke: rgba(255, 255, 255, 0.2); stroke-width: 12; }
+        .circle-progress { fill: none; stroke: #CBE896; stroke-width: 12; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 1s ease, stroke 0.5s ease; }
+        .circle-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+
+        .upload-btn { background: #0ACDFF; color: white; padding: 16px; border-radius: 14px; font-weight: 800; border: none; cursor: pointer; width: 100%; margin-bottom: 10px; font-size: 1rem; transition: transform 0.2s; }
+
+        .status-item { margin-bottom: 1rem; text-align: left; }
+        .progress-bg { background: rgba(255,255,255,0.2); height: 8px; border-radius: 10px; margin-top: 5px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.8s ease; border-radius: 10px; }
+
+        .history-card { background: rgba(3, 71, 50, 0.8); padding: 1rem; border-radius: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #CBE896; }
+        footer { text-align: center; padding: 1rem; background: #CBE896; color: #034732; font-weight: 700; position: fixed; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="loader-overlay">
+    <div class="logo-wrap">T<span class="brand-rest">racalify</span></div>
+</div>
+
+<header>
+    <div class="logo" id="homeLink">Tracalify</div>
+    <button id="fullResetBtn" onclick="fullReset()" style="background: white; color: #FF4D4D; border: none; padding: 6px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;">Reset All</button>
+</header>
+
+<main>
+    <h2 style="margin: 0 0 0.5rem 0;">Daily Progress</h2>
+
+    <div class="circle-container">
+        <svg class="circle-svg" viewBox="0 0 160 160">
+            <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
+            <circle id="goal-circle" class="circle-progress" cx="80" cy="80" r="70"></circle>
+        </svg>
+        <div class="circle-text">
+            <div id="session-total" style="font-size: 1.8rem; font-weight: 900; line-height: 1;">0</div>
+            <div style="font-size: 0.7rem; opacity: 0.8; font-weight: 600;">KCAL TOTAL</div>
+        </div>
+    </div>
+
+    <p id="status-text" style="color: #CBE896; font-size: 0.9rem; margin-bottom: 1.5rem;">Ready to scan</p>
+
+    <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display: none;">
+    <button class="upload-btn" id="scanBtn">Scan Your Meal</button>
+
+    <div class="status-container" style="margin-top: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Last Meal</span><span id="cal-val">0 kcal</span></div>
+                <div class="progress-bg"><div id="cal-bar" class="progress-fill" style="background: white;"></div></div>
+            </div>
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Protein</span><span id="p-val">0g</span></div>
+                <div class="progress-bg"><div id="p-bar" class="progress-fill" style="background: #CBE896;"></div></div>
+            </div>
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Carbs</span><span id="c-val">0g</span></div>
+                <div class="progress-bg"><div id="c-bar" class="progress-fill" style="background: #0ACDFF;"></div></div>
+            </div>
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Fat</span><span id="f-val">0g</span></div>
+                <div class="progress-bg"><div id="f-bar" class="progress-fill" style="background: #FFD700;"></div></div>
+            </div>
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Fiber</span><span id="fib-val">0g</span></div>
+                <div class="progress-bg"><div id="fib-bar" class="progress-fill" style="background: #A2D149;"></div></div>
+            </div>
+            <div class="status-item">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem;"><span>Sugar</span><span id="s-val">0g</span></div>
+                <div class="progress-bg"><div id="s-bar" class="progress-fill" style="background: #FF4D4D;"></div></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div style="max-width: 450px; margin: 0 auto; padding: 0 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h4 style="margin: 0;">History</h4>
+        <button onclick="clearHistoryOnly()" style="background: none; border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; cursor: pointer;">Clear List</button>
+    </div>
+    <div id="history-list"></div>
+</div>
+
+<footer>© 2026 Tracalify — Powered by Google Gemini API</footer>
+
+<script>
+    // --- API KEYS PRESERVED ---
+    const API_KEY = "AIzaSyCqYttpoHCZzJSBOmCfTbqH5t7Do7B7yaw"; 
+    const MODEL_ID = "gemini-2.5-flash"; 
+
+    const scanBtn = document.getElementById('scanBtn');
+    const cameraInput = document.getElementById('cameraInput');
+    const statusText = document.getElementById('status-text');
+    const historyList = document.getElementById('history-list');
+    const CIRCUMFERENCE = 440;
+
+    window.addEventListener("load", () => {
+        setTimeout(() => document.getElementById("loader-overlay").classList.add("loader-hidden"), 1000);
+        renderData();
+    });
+
+    scanBtn.addEventListener('click', () => cameraInput.click());
+
+    cameraInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setLoading(true);
+        statusText.innerText = "Tracalify AI is scanning...";
+
+        try {
+            const base64Data = await fileToBase64(file);
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "Identify the food. Return ONLY a JSON object with keys: 'name', 'calories', 'protein', 'carbs', 'fat', 'fiber', and 'sugar'." },
+                        { inline_data: { mime_type: file.type, data: base64Data } }
+                    ]
+                }],
+                generationConfig: { response_mime_type: "application/json" }
+            };
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const mealData = JSON.parse(result.candidates[0].content.parts[0].text);
+            processResult(mealData);
+        } catch (err) {
+            setLoading(false);
+            statusText.innerText = "Error: Couldn't identify meal.";
+        }
+    });
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    function setLoading(isLoading) {
+        scanBtn.disabled = isLoading;
+        statusText.innerText = isLoading ? "Analyzing..." : "Ready to scan";
+        statusText.style.color = isLoading ? "#0ACDFF" : "#CBE896";
+    }
+
+    function processResult(data) {
+        setLoading(false);
+        localStorage.setItem('lastStats', JSON.stringify(data));
+        const history = JSON.parse(localStorage.getItem('mealHistory') || "[]");
+        history.unshift({ name: data.name, cal: data.calories, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+        localStorage.setItem('mealHistory', JSON.stringify(history.slice(0, 25)));
+        renderData();
+    }
+
+    function renderData() {
+        const stats = JSON.parse(localStorage.getItem('lastStats') || "{}");
+        const history = JSON.parse(localStorage.getItem('mealHistory') || "[]");
+
+        updateBar('cal', stats.calories, 800, ' kcal');
+        updateBar('p', stats.protein, 40, 'g');
+        updateBar('c', stats.carbs, 80, 'g');
+        updateBar('f', stats.fat, 30, 'g');
+        updateBar('fib', stats.fiber, 15, 'g');
+        updateBar('s', stats.sugar, 20, 'g');
+
+        historyList.innerHTML = '';
+        let total = 0;
+        history.forEach(item => {
+            total += item.cal;
+            historyList.innerHTML += `
+                <div class="history-card">
+                    <span><strong>${item.name}</strong><br><small>${item.time}</small></span>
+                    <span style="color:#CBE896; font-weight:800;">${item.cal} kcal</span>
+                </div>`;
+        });
+
+        document.getElementById('session-total').innerText = total;
+        const percentage = Math.min(total / 2000, 1);
+        document.getElementById('goal-circle').style.strokeDashoffset = CIRCUMFERENCE - (percentage * CIRCUMFERENCE);
+    }
+
+    function updateBar(id, val, max, unit) {
+        const value = val || 0;
+        document.getElementById(`${id}-bar`).style.width = Math.min((value / max) * 100, 100) + "%";
+        document.getElementById(`${id}-val`).innerText = value + unit;
+    }
+
+    function clearHistoryOnly() {
+        if(confirm("Clear history list only? Stats will remain.")) {
+            localStorage.removeItem('mealHistory');
+            renderData();
+        }
+    }
+
+    function fullReset() {
+        if(confirm("Wipe everything (Stats, History, and Progress)?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>

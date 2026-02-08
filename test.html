@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini Browser Chat</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; line-height: 1.6; }
+        input, button, textarea { width: 100%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; }
+        button { background: #4285f4; color: white; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #357ae8; }
+        #response { background: #f4f4f4; padding: 15px; border-radius: 5px; min-height: 50px; white-space: pre-wrap; border-left: 5px solid #4285f4; }
+        .error { color: #d93025; background: #fce8e6; border-left-color: #d93025; }
+    </style>
+</head>
+<body>
+    <h2>Gemini API Chat</h2>
+    
+    <label>1. Enter API Key:</label>
+    <input type="password" id="apiKey" placeholder="Paste your AI Studio Key here...">
+    
+    <label>2. Your Message:</label>
+    <textarea id="userInput" rows="3" placeholder="Type something like 'Tell me a joke'"></textarea>
+    
+    <button onclick="sendChat()" id="sendBtn">Send Message</button>
+
+    <div id="response">Response will appear here...</div>
+
+    <script>
+        async function sendChat() {
+            const key = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('userInput').value;
+            const display = document.getElementById('response');
+            const btn = document.getElementById('sendBtn');
+
+            if (!key || !prompt) {
+                alert("Please fill in both the key and the prompt!");
+                return;
+            }
+
+            display.innerText = "Connecting to Gemini...";
+            display.classList.remove('error');
+            btn.disabled = true;
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error ? data.error.message : "Unknown API Error");
+                }
+
+                const resultText = data.candidates[0].content.parts[0].text;
+                display.innerText = resultText;
+
+            } catch (err) {
+                display.classList.add('error');
+                display.innerText = "ERROR: " + err.message;
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
